@@ -1,0 +1,462 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REFLOG — Судейский дневник</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg:#101114;
+  --panel:#191a1f;
+  --panel2:#202127;
+  --line:#2c2d34;
+  --text:#f2f2f3;
+  --muted:#8e909a;
+  --accent:#f5a623;
+  --green:#8ad4a1;
+  --red:#ff7777;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:Manrope,Arial,sans-serif;
+}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.app{max-width:1100px;margin:auto;padding:20px}
+header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 0 25px;border-bottom:1px solid var(--line);
+}
+.logo{font-family:Oswald,sans-serif;font-size:27px;font-weight:700;letter-spacing:1px}
+.logo span{color:var(--accent)}
+.header-label{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:18px 0}
+.tab{
+  border:1px solid var(--line);background:var(--panel);color:var(--muted);
+  padding:11px 16px;border-radius:12px;white-space:nowrap
+}
+.tab.active{background:var(--accent);color:#171717;border-color:var(--accent);font-weight:800}
+.section{display:none}
+.section.active{display:block}
+.card{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:18px;padding:20px;margin-bottom:16px
+}
+h1,h2,h3{font-family:Oswald,sans-serif;margin-top:0}
+h1{font-size:28px}
+h2{font-size:22px}
+h3{font-size:17px}
+p{line-height:1.55}
+.muted{color:var(--muted)}
+.small{font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+input,textarea,select{
+  width:100%;background:var(--panel2);color:var(--text);
+  border:1px solid var(--line);border-radius:11px;padding:12px;outline:none
+}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:90px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px}
+.field{margin-bottom:14px}
+.btn{
+  background:var(--accent);color:#171717;border:0;border-radius:12px;
+  padding:12px 16px;font-weight:800
+}
+.btn.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+.btn.danger{background:#392222;color:#ffaaaa}
+.btn.smallbtn{padding:8px 11px;font-size:12px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.emotions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.emotion{
+  padding:12px;background:var(--panel2);border:1px solid var(--line);
+  border-radius:12px;text-align:left;color:var(--text)
+}
+.emotion.selected{border-color:var(--accent);background:#332718}
+.check{
+  display:flex;align-items:center;gap:10px;padding:12px;
+  background:var(--panel2);border-radius:12px;margin-bottom:8px;
+  border:1px solid transparent
+}
+.check.done{border-color:#315b40}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.check.done span{text-decoration:line-through;color:var(--muted)}
+.progress{height:8px;background:var(--panel2);border-radius:10px;overflow:hidden}
+.progress>div{height:100%;background:var(--accent);transition:width .2s}
+.match{
+  border:1px solid var(--line);border-radius:15px;padding:16px;
+  margin-bottom:10px;background:var(--panel2)
+}
+.match.active{border-color:var(--accent)}
+.match-title{font-weight:800}
+.rating-row{display:flex;gap:6px;flex-wrap:wrap}
+.rating-btn{
+  flex:1;min-width:38px;background:var(--panel2);color:var(--text);
+  border:1px solid var(--line);border-radius:9px;padding:10px
+}
+.rating-btn.selected{background:var(--accent);color:#171717;border-color:var(--accent)}
+.focus-item{
+  border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px
+}
+.empty{text-align:center;color:var(--muted);padding:35px 10px}
+.stat{background:var(--panel2);border-radius:14px;padding:17px}
+.stat-value{font-family:Oswald;font-size:32px;color:var(--accent)}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:25px}
+@media(max-width:650px){
+ .app{padding:14px}
+ .grid,.grid3{grid-template-columns:1fr}
+ .card{padding:16px}
+ header{align-items:flex-start}
+ .emotions{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div>
+    <div class="logo">REF<span>LOG</span></div>
+    <div class="header-label">ТВОЙ СУДЕЙСКИЙ ДНЕВНИК</div>
+  </div>
+  <div class="header-label">HOCKEY OFFICIAL</div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" onclick="showTab('home',this)">Главная</button>
+  <button class="tab" onclick="showTab('matches',this)">Матчи</button>
+  <button class="tab" onclick="showTab('equipment',this)">Экипировка</button>
+  <button class="tab" onclick="showTab('stats',this)">Статистика</button>
+</nav>
+
+<!-- ГЛАВНАЯ -->
+<section id="home" class="section active">
+  <div class="card">
+    <div class="row">
+      <div>
+        <h1>Твоя работа. Твой прогресс.</h1>
+        <p class="muted">Каждый матч — опыт. Каждая ошибка — урок.</p>
+      </div>
+      <button class="btn" onclick="openCreate()">+ Создать матч</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="stat">
+      <div class="small">Всего матчей</div>
+      <div class="stat-value" id="totalMatches">0</div>
+    </div>
+    <div class="stat">
+      <div class="small">Заполненных анализов</div>
+      <div class="stat-value" id="completedMatches">0</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Ближайший матч</h2>
+    <div id="nextMatch" class="muted">Матчи пока не добавлены.</div>
+  </div>
+
+  <div class="card">
+    <h2>Перед выходом на лёд</h2>
+    <p class="muted">Проверь экипировку и настрой себя на работу.</p>
+    <button class="btn secondary" onclick="showTabById('equipment')">Открыть чек-лист</button>
+  </div>
+
+  <div class="card">
+    <h2>Напоминание</h2>
+    <p id="quote" style="font-size:18px;font-weight:700">Ты не обязан быть идеальным. Ты обязан быть внимательным.</p>
+    <button class="btn secondary smallbtn" onclick="newQuote()">Другая мысль</button>
+  </div>
+</section>
+
+<!-- МАТЧИ -->
+<section id="matches" class="section">
+  <div class="row" style="margin-bottom:15px">
+    <h1>Матчи</h1>
+    <button class="btn" onclick="openCreate()">+ Создать</button>
+  </div>
+  <div id="matchesList"></div>
+</section>
+
+<!-- ЭКИПИРОВКА -->
+<section id="equipment" class="section">
+  <h1>Экипировка</h1>
+  <div class="card">
+    <div class="row">
+      <div>
+        <h2>Судейская сумка</h2>
+        <p class="small">Отмечай вещи по мере сборки.</p>
+      </div>
+      <button class="btn secondary smallbtn" onclick="resetEquipment()">Сбросить</button>
+    </div>
+    <div id="equipmentProgress" class="progress"><div style="width:0%"></div></div>
+    <p id="equipmentCount" class="small"></p>
+    <div id="equipmentList"></div>
+  </div>
+</section>
+
+<!-- СТАТИСТИКА -->
+<section id="stats" class="section">
+  <h1>Статистика</h1>
+  <div class="grid">
+    <div class="stat">
+      <div class="small">Матчей в дневнике</div>
+      <div class="stat-value" id="sMatches">0</div>
+    </div>
+    <div class="stat">
+      <div class="small">Средняя оценка</div>
+      <div class="stat-value" id="sRating">—</div>
+    </div>
+    <div class="stat">
+      <div class="small">Анализов</div>
+      <div class="stat-value" id="sReviews">0</div>
+    </div>
+    <div class="stat">
+      <div class="small">Экипировка</div>
+      <div class="stat-value" id="sGear">0%</div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Последние матчи</h2>
+    <div id="statsList"></div>
+  </div>
+</section>
+
+<!-- МОДАЛЬНОЕ ОКНО: ФОРМА -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:#000b;z-index:10;overflow:auto;padding:15px">
+  <div class="card" style="max-width:750px;margin:25px auto">
+    <div class="row">
+      <h1 id="modalTitle">Новый матч</h1>
+      <button class="btn secondary smallbtn" onclick="closeModal()">Закрыть</button>
+    </div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<footer>REFLOG · Судейство — это дисциплина, решения и постоянный рост.</footer>
+</div>
+
+<script>
+const EMOTIONS=[
+"Счастливый","Расстроенный","Решительный","Взволнованный",
+"Грустный","Позитивный","Обеспокоенный","Разочарованный",
+"Надеющийся","Нервный","Неуверенный","Расслабленный",
+"Напряжённый","Взвиченный","Уставший","Сильный",
+"Безразличный","Тревожный","Злой","Уверенный"
+];
+
+const GEAR=[
+"Носки","Коньки","Термобельё","Наколенники","Ракушка","Брюки",
+"Нагрудник","Налокотники","Свисток","Запасной свисток","Шлем",
+"Косметичка","Полотенце","Мыльно-рыльное","Тапочки",
+"Кроссовки (доп)","Одежда для фитнеса (доп)"
+];
+
+const QUOTES=[
+"Ты не обязан быть идеальным. Ты обязан быть внимательным.",
+"Следующий эпизод важнее предыдущего.",
+"Спокойствие — твой инструмент.",
+"Уверенность приходит через подготовку.",
+"Не бойся свистка. Бойся потерять концентрацию.",
+"Ты здесь не случайно. Работай.",
+"Решение принято — переключайся на игру.",
+"Судья не должен нравиться всем. Он должен быть последовательным."
+];
+
+let matches=JSON.parse(localStorage.getItem("reflog_matches")||"[]");
+let gearState=JSON.parse(localStorage.getItem("reflog_gear")||"{}");
+let currentId=null;
+
+function save(){
+ localStorage.setItem("reflog_matches",JSON.stringify(matches));
+ localStorage.setItem("reflog_gear",JSON.stringify(gearState));
+ renderAll();
+}
+
+function showTab(id,btn){
+ document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+ document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+ if(btn)btn.classList.add("active");
+ renderAll();
+}
+function showTabById(id){
+ const btn=[...document.querySelectorAll(".tab")].find(t=>t.textContent.trim()===(id==="equipment"?"Экипировка":id==="matches"?"Матчи":"Статистика"));
+ showTab(id,btn);
+}
+function openCreate(){
+ currentId=null;
+ document.getElementById("modalTitle").textContent="Новый матч";
+ document.getElementById("modalContent").innerHTML=`
+ <div class="field"><label>Дата и время</label><input type="datetime-local" id="mDate"></div>
+ <div class="field"><label>Команда соперника</label><input id="mOpponent" placeholder="Например, Ак Барс"></div>
+ <div class="field"><label>Турнир / лига (необязательно)</label><input id="mTournament" placeholder="Первенство, турнир..."></div>
+ <div class="field"><label>Место (необязательно)</label><input id="mPlace" placeholder="Название арены"></div>
+ <button class="btn" onclick="saveNewMatch()">Создать матч</button>`;
+ document.getElementById("modal").style.display="block";
+}
+function saveNewMatch(){
+ const date=document.getElementById("mDate").value;
+ const opponent=document.getElementById("mOpponent").value.trim();
+ if(!date||!opponent){alert("Укажи дату и команду соперника.");return}
+ const m={
+  id:Date.now(),date,opponent,
+  tournament:document.getElementById("mTournament").value,
+  place:document.getElementById("mPlace").value,
+  emotions:[],focus:["","",""],ratings:{},notes:"",
+  reviewed:false
+ };
+ matches.push(m);
+ save();
+ closeModal();
+ openMatch(m.id);
+}
+function closeModal(){document.getElementById("modal").style.display="none"}
+function openMatch(id){
+ currentId=id;
+ const m=matches.find(x=>x.id===id);
+ if(!m)return;
+ document.getElementById("modalTitle").textContent=m.opponent;
+ const before=new Date(m.date);
+ const dateStr=before.toLocaleString("ru-RU");
+ let emotionsHTML=EMOTIONS.map(e=>`
+  <button class="emotion ${m.emotions.includes(e)?"selected":""}" onclick="toggleEmotion('${e}')">${m.emotions.includes(e)?"✓ ":""}${e}</button>`).join("");
+ document.getElementById("modalContent").innerHTML=`
+ <div class="card" style="background:var(--panel2)">
+ <div><b>${dateStr}</b></div>
+ <div class="muted">${m.tournament||""} ${m.place?"· "+m.place:""}</div>
+ </div>
+ <h2>Перед матчем</h2>
+ <label>Как я себя чувствую?</label>
+ <div class="emotions">${emotionsHTML}</div>
+ <h3>На чём я сосредоточусь сегодня? (3 момента)</h3>
+ ${m.focus.map((f,i)=>`<div class="field"><label>Момент ${i+1}</label><input value="${escapeHtml(f)}" id="focus${i}" placeholder="${["Например, контроль зоны ворот","Например, положение вне игры","Например, общение"][i]}" onchange="updateFocus(${i},this.value)"></div>`).join("")}
+ <hr style="border-color:var(--line);margin:25px 0">
+ <h2>После матча</h2>
+ <p class="muted">Оцени каждый аспект по шкале от 1 до 10.</p>
+ ${["Свистки и решения","Позиционирование","Контроль игры","Физическая готовность","Взаимодействие с бригадой","Общение","Концентрация","Уверенность"].map(r=>`
+ <div class="field">
+ <label>${r}</label>
+ <div class="rating-row">${Array.from({length:10},(_,i)=>i+1).map(n=>`<button class="rating-btn ${m.ratings[r]===n?"selected":""}" onclick="setRating('${r}',${n})">${n}</button>`).join("")}</div>
+ </div>`).join("")}
+ <div class="field"><label>Что получилось хорошо?</label><textarea id="notesGood" placeholder="Мои сильные стороны сегодня...">${escapeHtml(m.notesGood||"")}</textarea></div>
+ <div class="field"><label>Что нужно улучшить?</label><textarea id="notesImprove" placeholder="Ошибки, ситуации, чему научиться...">${escapeHtml(m.notesImprove||"")}</textarea></div>
+ <div class="field"><label>Разбор эпизодов / заметки</label><textarea id="notes" placeholder="Важные эпизоды, вопросы по правилам...">${escapeHtml(m.notes||"")}</textarea></div>
+ <div class="row">
+ <button class="btn" onclick="saveMatchReview()">Сохранить</button>
+ <button class="btn danger smallbtn" onclick="deleteMatch(${m.id})">Удалить матч</button>
+ </div>`;
+ document.getElementById("modal").style.display="block";
+}
+function toggleEmotion(e){
+ const m=matches.find(x=>x.id===currentId);
+ if(!m)return;
+ m.emotions=m.emotions.includes(e)?m.emotions.filter(x=>x!==e):[...m.emotions,e];
+ save();
+ openMatch(currentId);
+}
+function updateFocus(i,v){
+ const m=matches.find(x=>x.id===currentId);
+ if(m)m.focus[i]=v;
+}
+function setRating(r,n){
+ const m=matches.find(x=>x.id===currentId);
+ if(m)m.ratings[r]=n;
+ save();
+ openMatch(currentId);
+}
+function saveMatchReview(){
+ const m=matches.find(x=>x.id===currentId);
+ if(!m)return;
+ for(let i=0;i<3;i++)m.focus[i]=document.getElementById("focus"+i).value;
+ m.notesGood=document.getElementById("notesGood").value;
+ m.notesImprove=document.getElementById("notesImprove").value;
+ m.notes=document.getElementById("notes").value;
+ m.reviewed=Object.keys(m.ratings).length>0;
+ save();
+ closeModal();
+}
+function deleteMatch(id){
+ if(!confirm("Удалить этот матч и его анализ?"))return;
+ matches=matches.filter(x=>x.id!==id);
+ save();
+ closeModal();
+}
+function escapeHtml(s){
+ return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function renderMatches(){
+ const el=document.getElementById("matchesList");
+ if(!matches.length){el.innerHTML='<div class="empty">Матчей пока нет. Создай первый.</div>';return}
+ const sorted=[...matches].sort((a,b)=>new Date(b.date)-new Date(a.date));
+ el.innerHTML=sorted.map(m=>`
+ <div class="match">
+  <div class="row">
+   <div>
+    <div class="match-title">${escapeHtml(m.opponent)}</div>
+    <div class="small">${new Date(m.date).toLocaleString("ru-RU")}</div>
+    <div class="small">${escapeHtml(m.tournament||"")}${m.place?" · "+escapeHtml(m.place):""}</div>
+   </div>
+   <button class="btn secondary smallbtn" onclick="openMatch(${m.id})">Открыть анализ</button>
+  </div>
+  <div style="margin-top:10px" class="small">${m.reviewed?"✓ Анализ заполнен":"○ Анализ не заполнен"}</div>
+ </div>`).join("");
+}
+function renderHome(){
+ document.getElementById("totalMatches").textContent=matches.length;
+ document.getElementById("completedMatches").textContent=matches.filter(m=>m.reviewed).length;
+ const now=new Date();
+ const upcoming=matches.filter(m=>new Date(m.date)>=now).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
+ const el=document.getElementById("nextMatch");
+ if(!upcoming){el.innerHTML="Нет предстоящих матчей.";return}
+ el.innerHTML=`
+ <h3>${escapeHtml(upcoming.opponent)}</h3>
+ <p>${new Date(upcoming.date).toLocaleString("ru-RU")}</p>
+ <div class="small">${escapeHtml(upcoming.tournament||"")}</div>
+ <button class="btn secondary" onclick="openMatch(${upcoming.id})">Подготовиться</button>`;
+}
+function renderEquipment(){
+ const el=document.getElementById("equipmentList");
+ el.innerHTML=GEAR.map((item,i)=>`
+ <label class="check ${gearState[item]?"done":""}">
+ <input type="checkbox" ${gearState[item]?"checked":""} onchange="toggleGear('${item}',this.checked)">
+ <span>${item}</span></label>`).join("");
+ const count=GEAR.filter(g=>gearState[g]).length;
+ const percent=Math.round(count/GEAR.length*100);
+ document.querySelector("#equipmentProgress>div").style.width=percent+"%";
+ document.getElementById("equipmentCount").textContent=`${count} из ${GEAR.length} вещей собрано · ${percent}%`;
+}
+function toggleGear(item,v){gearState[item]=v;save()}
+function resetEquipment(){
+ if(!confirm("Сбросить весь чек-лист?"))return;
+ gearState={};save();
+}
+function renderStats(){
+ const rated=matches.filter(m=>Object.keys(m.ratings).length);
+ let vals=[];
+ rated.forEach(m=>vals.push(...Object.values(m.ratings)));
+ const avg=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):"—";
+ document.getElementById("sMatches").textContent=matches.length;
+ document.getElementById("sRating").textContent=avg;
+ document.getElementById("sReviews").textContent=rated.length;
+ const gearPercent=Math.round(GEAR.filter(g=>gearState[g]).length/GEAR.length*100);
+ document.getElementById("sGear").textContent=gearPercent+"%";
+ const el=document.getElementById("statsList");
+ const sorted=[...matches].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+ el.innerHTML=sorted.length?sorted.map(m=>{
+  const v=Object.values(m.ratings);
+  const average=v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):"—";
+  return `<div class="match"><b>${escapeHtml(m.opponent)}</b><div class="small">${new Date(m.date).toLocaleDateString("ru-RU")} · ${average}/10</div></div>`;
+ }).join(""):'<div class="empty">Пока нет данных</div>';
+}
+function renderAll(){renderMatches();renderHome();renderEquipment();renderStats()}
+function newQuote(){document.getElementById("quote").textContent=QUOTES[Math.floor(Math.random()*QUOTES.length)]}
+renderAll();
+</script>
+</body>
+</html>
